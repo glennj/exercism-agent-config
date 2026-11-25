@@ -4,14 +4,22 @@ Agent files (`AGENTS.md`, `.agents/`, ...) for the Exercism track repos I
 contribute to. Kept here, not in the track repos, because maintainers are
 split on LLM use.
 
-Layout: one directory per track, mirroring where the files go in the track repo.
+Layout: files shared by every track live in `_common/`; each track has a
+directory mirroring where its own files go in the track repo.
 
-    bash/AGENTS.md          ->  ../bash/AGENTS.md
-    bash/.agents/skills/... ->  ../bash/.agents
+    _common/AGENTS.md         ->  ../bash/AGENTS.md
+    _common/LLM_GUIDELINES.md ->  ../bash/LLM_GUIDELINES.md
+    bash/.agents/skills/...   ->  ../bash/.agents
+    bash/docs/track_topics    ->  ../bash/docs/track_topics
 
 Each file is symlinked into the track repo and listed in that repo's
 `.git/info/exclude`, so it never shows up in `git status` or a PR.
 
     ./link.sh <track>       # assumes the track repo is ../<track>
+
+`AGENTS.md` holds only rules general to every track. Track-specific facts live
+in `<track>/docs/track_topics/`, symlinked into the track repo's `docs/`
+(`link.sh` merges into directories that already exist there). See
+`LLM_GUIDELINES.md` (in each track's repo root) for what goes where.
 
 Re-running is safe. Real files already in the track repo are never overwritten.

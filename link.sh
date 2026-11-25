@@ -6,8 +6,11 @@
 #   <track>          directory in this repo holding that track's agent files
 #   track-repo-dir   defaults to ../<track>
 #
-# Every top-level entry in <track>/ (dotfiles included) is symlinked into the
-# track repo, and its name is added to the repo's .git/info/exclude.
+# First, the files shared by every track (AGENTS.md, LLM_GUIDELINES.md from
+# _common/) are linked. Then every entry in <track>/ (dotfiles included) is symlinked into the track repo,
+# and its path is added to the repo's .git/info/exclude. Directories that
+# already exist in the track repo (e.g. docs/) are merged: only the entries
+# inside them that are missing get linked.
 # Safe to re-run. Never overwrites a real file or directory.
 
 set -euo pipefail
@@ -57,6 +60,45 @@ link_entry() {
     fi
 }
 
+# Link every entry of directory $1 into directory $2, hide each link in git.
+# $3 is the exclude file; $4 is the path prefix of $2 relative to the repo root.
+# A directory that already exists for real in the repo (such as docs/) is
+# descended into, so only the missing entries (docs/track_topics) are linked.
+link_dir() {
+    local src=$1 dest=$2 exclude=$3 prefix=${4:-}
+    local path name rel
+
+    for path in "$src"/*; do
+        name=${path##*/}
+
+        if [[ -d $path && ! -L $dest/$name && -d $dest/$name ]]; then
+            link_dir "$path" "$dest/$name" "$exclude" "$prefix$name/"
+            continue
+        fi
+
+        rel=$(relative_path "$path" "$dest")
+        if link_entry "$rel" "$dest/$name"; then
+            add_to_exclude "$prefix$name" "$exclude"
+            printf 'linked %s%s -> %s\n' "$prefix" "$name" "$rel"
+        else
+            warn "skip $prefix$name: exists and is not a symlink"
+        fi
+    done
+}
+
+# Link file $1 into directory $2 as $4, hiding it in git (exclude file $3).
+link_file() {
+    local file=$1 dest=$2 exclude=$3 name=$4 rel
+    [[ -e $file ]] || return 0
+    rel=$(relative_path "$file" "$dest")
+    if link_entry "$rel" "$dest/$name"; then
+        add_to_exclude "$name" "$exclude"
+        printf 'linked %s -> %s\n' "$name" "$rel"
+    else
+        warn "skip $name: exists and is not a symlink"
+    fi
+}
+
 main() {
     (( $# >= 1 && $# <= 2 )) || usage
 
@@ -76,18 +118,13 @@ main() {
     # Match dotfiles; expand to nothing (not a literal "*") if the dir is empty.
     shopt -s dotglob nullglob
 
-    local path name rel
-    for path in "$src"/*; do
-        name=${path##*/}
-        rel=$(relative_path "$path" "$dest")
-
-        if link_entry "$rel" "$dest/$name"; then
-            add_to_exclude "$name" "$exclude"
-            printf 'linked %s -> %s\n' "$name" "$rel"
-        else
-            warn "skip $name: exists and is not a symlink"
-        fi
+    # Shared files first, so a same-named file in <track>/ takes precedence.
+    local shared
+    for shared in AGENTS.md LLM_GUIDELINES.md; do
+        link_file "$here/_common/$shared" "$dest" "$exclude" "$shared"
     done
+
+    link_dir "$src" "$dest" "$exclude"
 }
 
 main "$@"
