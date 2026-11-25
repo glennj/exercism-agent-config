@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#
 # Symlink a track's agent files into its repo and hide them from git.
 #
 # usage: link.sh <track> [track-repo-dir]
@@ -11,36 +12,82 @@
 
 set -euo pipefail
 
-(( $# >= 1 && $# <= 2 )) || { sed -n '2,10p' "$0" | sed 's/^# \?//'; exit 2; }
+usage() {
+    printf 'usage: %s <track> [track-repo-dir]\n' "${0##*/}" >&2
+    exit 2
+}
 
-here=$(cd "$(dirname "$0")" && pwd -P)
-track=${1%/}
-src=$here/$track
-dest=$(cd "${2:-$here/../$track}" && pwd -P)
+die() {
+    printf 'error: %s\n' "$*" >&2
+    exit 1
+}
 
-[[ -d $src ]]      || { echo "no such track config: $src" >&2; exit 1; }
-[[ -d $dest/.git ]] || { echo "not a git repo: $dest" >&2; exit 1; }
+warn() {
+    printf '%s\n' "$*" >&2
+}
 
-exclude=$dest/.git/info/exclude
-mkdir -p "$dest/.git/info"
-touch "$exclude"
+# Print the path of $1 relative to directory $2.
+# Relative links survive moving the whole tracks/ directory.
+relative_path() {
+    python3 -c 'import os, sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$1" "$2"
+}
 
-shopt -s dotglob nullglob
-for path in "$src"/*; do
-    name=${path##*/}
-    target=$dest/$name
-    # relative link so it survives moving the whole tracks/ directory
-    rel=$(python3 -c 'import os,sys; print(os.path.relpath(*sys.argv[1:3]))' "$path" "$dest")
-
-    if [[ -L $target ]]; then
-        [[ $(readlink "$target") == "$rel" ]] || ln -sfn "$rel" "$target"
-    elif [[ -e $target ]]; then
-        echo "skip $name: exists and is not a symlink" >&2
-        continue
-    else
-        ln -s "$rel" "$target"
+# Add $1 to the exclude file $2 unless it is already listed.
+add_to_exclude() {
+    local name=$1 exclude_file=$2
+    if ! grep -qxF -- "$name" "$exclude_file"; then
+        printf '%s\n' "$name" >> "$exclude_file"
     fi
+}
 
-    grep -qxF "$name" "$exclude" || echo "$name" >> "$exclude"
-    echo "linked $name -> $rel"
-done
+# Make $2 a symlink pointing at $1, replacing only an existing symlink.
+# Returns 1 (and does nothing) if $2 is a real file or directory.
+link_entry() {
+    local link_target=$1 link_path=$2
+
+    if [[ -L $link_path ]]; then
+        # Already a symlink: repoint it only if it is wrong.
+        if [[ $(readlink "$link_path") != "$link_target" ]]; then
+            ln -sfn "$link_target" "$link_path"
+        fi
+    elif [[ -e $link_path ]]; then
+        return 1
+    else
+        ln -s "$link_target" "$link_path"
+    fi
+}
+
+main() {
+    (( $# >= 1 && $# <= 2 )) || usage
+
+    local here track src dest exclude
+    here=$(cd "$(dirname "$0")" && pwd -P)
+    track=${1%/}
+    src=$here/$track
+    dest=$(cd "${2:-$here/../$track}" && pwd -P)
+
+    [[ -d $src ]]       || die "no such track config: $src"
+    [[ -d $dest/.git ]] || die "not a git repo: $dest"
+
+    exclude=$dest/.git/info/exclude
+    mkdir -p "${exclude%/*}"
+    touch "$exclude"
+
+    # Match dotfiles; expand to nothing (not a literal "*") if the dir is empty.
+    shopt -s dotglob nullglob
+
+    local path name rel
+    for path in "$src"/*; do
+        name=${path##*/}
+        rel=$(relative_path "$path" "$dest")
+
+        if link_entry "$rel" "$dest/$name"; then
+            add_to_exclude "$name" "$exclude"
+            printf 'linked %s -> %s\n' "$name" "$rel"
+        else
+            warn "skip $name: exists and is not a symlink"
+        fi
+    done
+}
+
+main "$@"
