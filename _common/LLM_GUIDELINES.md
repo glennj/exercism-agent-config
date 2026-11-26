@@ -14,10 +14,14 @@ This page tells maintainers what information belongs in which file, so each fact
 
 Quick test:
 
-- Would the sentence still be true in the Python track? Put it in `AGENTS.md`.
-- Is it a fact or convention about this track? Put it in a topic doc.
-- Is it a "do these steps in order" recipe? Make it a skill.
-- Is it aimed at students or the Exercism website? Use the existing `docs/` files.
+- Would the sentence still be true in the Python track?
+  Put it in `AGENTS.md`.
+- Is it a fact or convention about this track?
+  Put it in a topic doc.
+- Is it a "do these steps in order" recipe?
+  Make it a skill.
+- Is it aimed at students or the Exercism website?
+  Use the existing `docs/` files.
 
 ## Keeping `AGENTS.md` track-agnostic
 
@@ -32,7 +36,7 @@ Quick test:
 - One sentence per line, which keeps diffs small.
 - Prefer exact, runnable commands in fenced code blocks, and say what prerequisites they need.
 - State what is true now; do not describe aspirations.
-- Link to existing docs (for example [docs/MAINTAINING.md](docs/MAINTAINING.md)) rather than copying them.
+- Link to existing docs rather than copying them.
 - Add the new doc to the table in [docs/track_topics/README.md](docs/track_topics/README.md) with a "read it when you are..." entry.
 
 ## Writing a skill

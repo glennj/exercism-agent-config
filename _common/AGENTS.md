@@ -36,7 +36,8 @@ Before implementing:
 - No error handling for impossible scenarios.
 - If you write 200 lines and it could be 50, rewrite it.
 
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+Ask yourself: "Would a senior engineer say this is overcomplicated?"
+If yes, simplify.
 
 ### 3. Surgical Changes
 
@@ -86,7 +87,7 @@ This repository maintains an Exercism track: exercises, tests, example solutions
 Students solve exercises on the Exercism website or in their own Exercism CLI workspaces.
 Do not treat this repository as a student workspace or fill in student stubs with completed solutions.
 
-Follow `POLICIES.md`.
+Follow the track's policies and style guide, as named in the topic docs.
 Keep changes scoped to the requested exercise or track component, preserve existing work, and avoid unrelated formatting or generated-file churn.
 
 ## Track documentation
@@ -105,6 +106,12 @@ If a topic doc is missing or contradicts the repository, report it rather than g
 
 Task-specific skills live in `.agents/skills/`.
 Use a skill when its description matches the task.
+
+## Markdown style
+
+Markdown documents in this repository should use "ventilated prose": one sentence per line.
+This keeps diffs focused on the sentences that actually changed, which makes code review easier.
+Additionally, ensure that both headers and lists have a blank line before and after them.
 
 ## Finishing
 

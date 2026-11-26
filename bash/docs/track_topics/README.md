@@ -11,4 +11,5 @@ For general maintainer information, see [../MAINTAINING.md](../MAINTAINING.md).
 | [bash-conventions.md](bash-conventions.md) | writing or reviewing Bash code |
 | [validation.md](validation.md) | checking your changes before finishing |
 
-Adding or changing a doc here? See [LLM_GUIDELINES.md](../../LLM_GUIDELINES.md).
+Adding or changing a doc here?
+See [LLM_GUIDELINES.md](../../LLM_GUIDELINES.md).
